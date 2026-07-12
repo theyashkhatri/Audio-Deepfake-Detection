@@ -425,7 +425,23 @@ def main():
     setup_logging("INFO")
 
     from src.trainer import load_model
-    model  = load_model(args.model)
+    try:
+        model = load_model(args.model)
+    except FileNotFoundError:
+        print(f"⚠️  WARNING: Pre-trained weights for '{args.model}' not found.")
+        print("   Running in DEMO MODE with an untrained model (random predictions).")
+        print("   To get real predictions, run: make train-all\n")
+        
+        if args.model == "custom_cnn":
+            from src.models.custom_cnn import build_custom_cnn
+            model = build_custom_cnn()
+        elif args.model == "cnn_lstm":
+            from src.models.cnn_lstm import build_cnn_lstm
+            model = build_cnn_lstm()
+        elif args.model == "efficientnet_b0":
+            from src.models.efficientnet import build_efficientnet
+            model = build_efficientnet()
+
     engine = AudioInferenceEngine(model, model_name=args.model,
                                   threshold=args.threshold)
 
