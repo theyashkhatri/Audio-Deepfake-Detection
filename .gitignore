@@ -1,0 +1,71 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.installed.cfg
+
+# Virtual Environments
+.venv/
+venv/
+env/
+ENV/
+
+# Jupyter Notebooks checkpoints
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Data (never commit dataset)
+data/ASVspoof2019_LA/
+data/*.zip
+data/*.tar.gz
+data/*.flac
+data/*.wav
+
+# Model Artifacts (large binaries)
+saved_models/*.keras
+saved_models/*.h5
+saved_models/*.weights.h5
+saved_models/*/
+
+# Results
+results/plots/
+results/*.png
+results/*.jpg
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# Streamlit
+.streamlit/
+
+# Logs
+*.log
+logs/
+tensorboard_logs/
+
+# Config secrets
+.env
+*.env
+
+# Temp
+tmp/
+temp/
