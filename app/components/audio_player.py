@@ -50,10 +50,10 @@ def render_audio_player(
         spine.set_edgecolor("#333333")
 
     ax.set_xlim([0, duration])
-    ax.set_title(f"📊 Waveform — {filename}", color="white", fontsize=10, fontweight="bold")
+    ax.set_title(f"Waveform — {filename}", color="white", fontsize=10, fontweight="bold")
 
     plt.tight_layout()
-    st.pyplot(fig, use_container_width=True)
+    st.pyplot(fig, use_container_width=True)  # noqa: deprecated arg OK for older streamlit
     plt.close(fig)
 
     # ── Stats Row ────────────────────────────────────────────────────────────

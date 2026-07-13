@@ -10,7 +10,7 @@ Professional AI audio deepfake detection system with:
   - Grad-CAM explainability
 
 Run with:
-    streamlit run app/streamlit_app.py
+    streamlit run app/app.py
 """
 
 import io
@@ -213,8 +213,8 @@ with st.sidebar:
 
     show_gradcam = st.checkbox(
         "🔥 Show Grad-CAM explanation",
-        value=True,
-        help="Generate explainability heatmap (adds ~500ms processing time).",
+        value=False,
+        help="Generate explainability heatmap. ⚠️ May crash on Apple Silicon (M1/M2/M3) due to a TensorFlow GradientTape bug — disable if app crashes after upload.",
     )
 
     st.divider()

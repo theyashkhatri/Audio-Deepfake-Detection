@@ -125,7 +125,18 @@ class GradCAM:
             loss = predictions[:, 0]
 
         # Gradient of prediction w.r.t. conv feature maps
-        grads = tape.gradient(loss, conv_outputs)  # (1, H', W', C_conv)
+        try:
+            grads = tape.gradient(loss, conv_outputs)  # (1, H', W', C_conv)
+        except Exception as e:
+            logger.warning("GradientTape.gradient() failed: %s", e)
+            # Return a blank heatmap instead of crashing
+            dummy_shape = conv_outputs.shape[1:3]
+            return np.zeros(dummy_shape, dtype=np.float32)
+
+        if grads is None:
+            logger.warning("Gradients are None — returning blank heatmap")
+            dummy_shape = conv_outputs.shape[1:3]
+            return np.zeros(dummy_shape, dtype=np.float32)
 
         # Global Average Pool the gradients → importance weights per channel
         pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))  # (C_conv,)
@@ -144,6 +155,7 @@ class GradCAM:
         heatmap = (heatmap - heatmap.min()) / (heatmap.max() - heatmap.min() + eps)
 
         return heatmap.astype(np.float32)
+
 
     def overlay_on_spectrogram(
         self,

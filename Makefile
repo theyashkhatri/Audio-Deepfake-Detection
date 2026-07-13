@@ -40,7 +40,7 @@ test-coverage:  ## Run tests with coverage report
 # ── Application ───────────────────────────────────────────────────────────────
 
 app:  ## Launch the Streamlit application
-	$(STREAMLIT) run app/streamlit_app.py
+	$(STREAMLIT) run app/app.py
 
 # ── Training ──────────────────────────────────────────────────────────────────
 
