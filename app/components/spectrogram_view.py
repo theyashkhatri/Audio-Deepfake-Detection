@@ -12,8 +12,6 @@ import streamlit as st
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-import librosa
-import librosa.display
 
 
 def render_spectrogram(
@@ -24,7 +22,7 @@ def render_spectrogram(
     cmap: str = "magma",
 ) -> None:
     """
-    Render a Log-Mel spectrogram in Streamlit.
+    Render a Log-Mel spectrogram in Streamlit using pure Matplotlib (librosa-free).
 
     Args:
         spec:        (N_MELS, T_FRAMES) or (N_MELS, T_FRAMES, 1) array in dB.
@@ -39,18 +37,21 @@ def render_spectrogram(
         spec = spec.squeeze(-1)
 
     fig, ax = plt.subplots(figsize=(10, 3.5))
-    fig.patch.set_facecolor("#0E1117")
-    ax.set_facecolor("#0E1117")
+    fig.patch.set_facecolor("#0E1116")
+    ax.set_facecolor("#0E1116")
 
-    img = librosa.display.specshow(
+    n_mels, t_frames = spec.shape
+    duration = (t_frames * hop_length) / sample_rate
+
+    # Display the 2D Mel spectrogram array using standard imshow
+    img = ax.imshow(
         spec,
-        sr=sample_rate,
-        hop_length=hop_length,
-        x_axis="time",
-        y_axis="mel",
-        ax=ax,
+        aspect="auto",
+        origin="lower",
+        extent=[0, duration, 0, n_mels],
         cmap=cmap,
     )
+
     cbar = fig.colorbar(img, ax=ax, format="%+2.0f dB")
     cbar.ax.yaxis.set_tick_params(color="white")
     cbar.outline.set_edgecolor("white")
@@ -60,6 +61,13 @@ def render_spectrogram(
     ax.set_title(title, color="white", fontsize=11, fontweight="bold")
     ax.set_xlabel("Time (s)", color="#BBBBBB", fontsize=9)
     ax.set_ylabel("Mel Frequency (Hz)", color="#BBBBBB", fontsize=9)
+    
+    # Custom y-ticks with standard Mel frequency approximations
+    tick_indices = [0, 32, 64, 96, 127]
+    tick_labels = ["0", "512", "1024", "2048", "4096"]
+    ax.set_yticks(tick_indices)
+    ax.set_yticklabels(tick_labels)
+    
     ax.tick_params(colors="#BBBBBB", labelsize=8)
     for spine in ax.spines.values():
         spine.set_edgecolor("#333333")
@@ -73,3 +81,4 @@ def render_spectrogram(
     buf.seek(0)
     st.image(buf, width="stretch")
     plt.close(fig)
+
