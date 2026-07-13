@@ -13,6 +13,9 @@ Run with:
     streamlit run app/app.py
 """
 
+import matplotlib
+matplotlib.use("Agg")
+
 import io
 import json
 import os
@@ -46,11 +49,30 @@ st.set_page_config(
 # ── Custom CSS (Dark Premium Theme) ──────────────────────────────────────────
 st.markdown("""
 <style>
-    /* Global dark background */
+    /* Global dark background & high-contrast font styling */
     .stApp { background-color: #0A0C10; }
     .main .block-container { padding: 2rem 3rem; max-width: 1400px; }
 
-    /* Sidebar minimal styling */
+    /* Base high-contrast body text */
+    div, p, span, label, li, ul, ol, td, th {
+        color: #E2E8F0 !important;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    /* Bright white headers */
+    h1, h2, h3, h4, h5, h6 {
+        color: #FFFFFF !important;
+    }
+
+    /* Sidebar text high-contrast */
+    [data-testid="stSidebar"] div, 
+    [data-testid="stSidebar"] p, 
+    [data-testid="stSidebar"] label, 
+    [data-testid="stSidebar"] span {
+        color: #E2E8F0 !important;
+    }
+
+    /* Sidebar panel clean layout */
     [data-testid="stSidebar"] {
         background: #0E1116;
         border-right: 1px solid #1E2330;
@@ -82,9 +104,10 @@ st.markdown("""
         -webkit-text-fill-color: transparent;
         background-clip: text;
         margin: 0;
+        color: unset !important; /* Allow background gradient clip */
     }
     .brand-subtitle {
-        color: #777;
+        color: #888899 !important;
         font-size: 0.95rem;
         margin-top: 4px;
     }
@@ -96,20 +119,15 @@ st.markdown("""
         background: #0E1116 !important;
         padding: 10px !important;
     }
-
-    /* Metric cards */
-    [data-testid="stMetric"] {
-        background: #0E1116;
-        border: 1px solid #1E2330;
-        border-radius: 10px;
-        padding: 12px;
+    [data-testid="stFileUploader"] section {
+        background-color: #0E1116 !important;
     }
 
     /* Section divider */
     .section-header {
         font-size: 1.1rem;
         font-weight: 700;
-        color: #00F2FE;
+        color: #00F2FE !important;
         border-bottom: 1px solid #1E2330;
         padding-bottom: 6px;
         margin-bottom: 20px;
@@ -121,17 +139,20 @@ st.markdown("""
     /* Progress bars */
     .stProgress > div > div { background: linear-gradient(90deg, #4FACFE, #00F2FE) !important; }
 
-    /* Expander */
+    /* Expander text */
     .streamlit-expanderHeader {
         background: #0E1116 !important;
         border: 1px solid #1E2330 !important;
         border-radius: 8px !important;
     }
+    .streamlit-expanderHeader p {
+        color: #FFFFFF !important;
+    }
 
-    /* Download button */
+    /* Download button styling */
     [data-testid="stDownloadButton"] button {
         background: linear-gradient(90deg, #4FACFE, #00F2FE) !important;
-        color: white !important;
+        color: #FFFFFF !important;
         border-radius: 8px !important;
         border: none !important;
         font-weight: 600 !important;
@@ -291,32 +312,33 @@ if uploaded_file is None:
     <div style="
         text-align: center;
         padding: 60px 20px;
-        background: #12151C;
-        border: 1px dashed #2A2A35;
+        background: #0E1116;
+        border: 1px dashed #1E2330;
         border-radius: 14px;
         margin-top: 20px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
     ">
         <div style="font-size: 4rem; margin-bottom: 16px;">🎙️</div>
-        <h3 style="color: #AAAAAA;">Upload an audio file to begin analysis</h3>
-        <p style="color: #666; margin-top: 8px;">
+        <h3 style="color: #FFFFFF !important; font-weight: 700;">Upload an audio file to begin analysis</h3>
+        <p style="color: #888899 !important; margin-top: 8px; font-size: 0.95rem;">
             Accepts WAV · MP3 · FLAC &nbsp;|&nbsp; Any duration
         </p>
-        <div style="display: flex; justify-content: center; gap: 30px; margin-top: 24px;">
-            <div style="text-align: center; color: #555;">
+        <div style="display: flex; justify-content: center; gap: 30px; margin-top: 30px;">
+            <div style="text-align: center; color: #E2E8F0 !important;">
                 <div style="font-size: 1.8rem;">🔍</div>
-                <div style="font-size: 0.8rem; margin-top: 4px;">AI Detection</div>
+                <div style="font-size: 0.8rem; margin-top: 6px; font-weight: 500;">AI Detection</div>
             </div>
-            <div style="text-align: center; color: #555;">
+            <div style="text-align: center; color: #E2E8F0 !important;">
                 <div style="font-size: 1.8rem;">📊</div>
-                <div style="font-size: 0.8rem; margin-top: 4px;">Window Analysis</div>
+                <div style="font-size: 0.8rem; margin-top: 6px; font-weight: 500;">Window Analysis</div>
             </div>
-            <div style="text-align: center; color: #555;">
+            <div style="text-align: center; color: #E2E8F0 !important;">
                 <div style="font-size: 1.8rem;">🔥</div>
-                <div style="font-size: 0.8rem; margin-top: 4px;">Grad-CAM XAI</div>
+                <div style="font-size: 0.8rem; margin-top: 6px; font-weight: 500;">Grad-CAM XAI</div>
             </div>
-            <div style="text-align: center; color: #555;">
+            <div style="text-align: center; color: #E2E8F0 !important;">
                 <div style="font-size: 1.8rem;">📥</div>
-                <div style="font-size: 0.8rem; margin-top: 4px;">JSON Report</div>
+                <div style="font-size: 0.8rem; margin-top: 6px; font-weight: 500;">JSON Report</div>
             </div>
         </div>
     </div>

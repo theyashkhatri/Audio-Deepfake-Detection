@@ -68,20 +68,20 @@ def render_audio_player(
         f"""
         <div style="display: flex; justify-content: space-between; gap: 8px; margin-top: 15px;">
             <div style="background: #141721; padding: 10px; border-radius: 8px; flex: 1; text-align: center; border: 1px solid #1E2330;">
-                <div style="font-size: 0.65rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">Duration</div>
-                <div style="font-size: 1.05rem; font-weight: 700; color: #00F2FE; margin-top: 4px;">{duration:.2f} s</div>
+                <div style="font-size: 0.65rem; color: #888899 !important; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Duration</div>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #00F2FE !important; margin-top: 4px;">{duration:.2f} s</div>
             </div>
             <div style="background: #141721; padding: 10px; border-radius: 8px; flex: 1; text-align: center; border: 1px solid #1E2330;">
-                <div style="font-size: 0.65rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">Sample Rate</div>
-                <div style="font-size: 1.05rem; font-weight: 700; color: #00F2FE; margin-top: 4px;">{sample_rate / 1000:.0f} kHz</div>
+                <div style="font-size: 0.65rem; color: #888899 !important; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Sample Rate</div>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #00F2FE !important; margin-top: 4px;">{sample_rate / 1000:.0f} kHz</div>
             </div>
             <div style="background: #141721; padding: 10px; border-radius: 8px; flex: 1; text-align: center; border: 1px solid #1E2330;">
-                <div style="font-size: 0.65rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">Samples</div>
-                <div style="font-size: 1.05rem; font-weight: 700; color: #00F2FE; margin-top: 4px;">{len(waveform):,}</div>
+                <div style="font-size: 0.65rem; color: #888899 !important; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Samples</div>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #00F2FE !important; margin-top: 4px;">{len(waveform):,}</div>
             </div>
             <div style="background: #141721; padding: 10px; border-radius: 8px; flex: 1; text-align: center; border: 1px solid #1E2330;">
-                <div style="font-size: 0.65rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">Peak Level</div>
-                <div style="font-size: 1.05rem; font-weight: 700; color: #00F2FE; margin-top: 4px;">{np.abs(waveform).max():.3f}</div>
+                <div style="font-size: 0.65rem; color: #888899 !important; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Peak Level</div>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #00F2FE !important; margin-top: 4px;">{np.abs(waveform).max():.3f}</div>
             </div>
         </div>
         """,

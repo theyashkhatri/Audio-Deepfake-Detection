@@ -36,7 +36,6 @@ def render_prediction_panel(result: dict) -> None:
     risk_desc   = risk.get("description", "")
 
     # ── Main Verdict ─────────────────────────────────────────────────────────
-    st.markdown("---")
     st.markdown("## 🎯 AI Detection Result")
 
     if is_fake:
@@ -58,15 +57,15 @@ def render_prediction_panel(result: dict) -> None:
             text-align: center;
             margin-bottom: 16px;
         ">
-            <h1 style="color: {verdict_color}; margin: 0; font-size: 2.2rem;">
+            <h1 style="color: {verdict_color} !important; margin: 0; font-size: 2rem; font-weight: 800;">
                 {verdict_icon} {verdict_text}
             </h1>
-            <p style="color: #CCCCCC; margin-top: 8px; font-size: 0.95rem;">
-                Confidence: <strong style="color: white;">{confidence * 100:.1f}%</strong>
+            <p style="color: #BBBBCC !important; margin-top: 8px; font-size: 0.95rem;">
+                Confidence: <strong style="color: #FFFFFF !important;">{confidence * 100:.1f}%</strong>
                 &nbsp;|&nbsp;
-                Threshold: <strong style="color: white;">{threshold:.2f}</strong>
+                Threshold: <strong style="color: #FFFFFF !important;">{threshold:.2f}</strong>
                 &nbsp;|&nbsp;
-                Model: <strong style="color: white;">{model_name}</strong>
+                Model: <strong style="color: #FFFFFF !important;">{model_name}</strong>
             </p>
         </div>
         """,
@@ -84,10 +83,10 @@ def render_prediction_panel(result: dict) -> None:
             margin-bottom: 16px;
         ">
             <span style="font-size: 1.4rem;">{risk_emoji}</span>
-            <strong style="color: {risk_color}; font-size: 1.1rem; margin-left: 8px;">
+            <strong style="color: {risk_color} !important; font-size: 1.1rem; margin-left: 8px;">
                 Risk Level: {risk_level}
             </strong>
-            <p style="color: #AAAAAA; margin: 4px 0 0 0; font-size: 0.9rem;">{risk_desc}</p>
+            <p style="color: #BBBBCC !important; margin: 4px 0 0 0; font-size: 0.9rem;">{risk_desc}</p>
         </div>
         """,
         unsafe_allow_html=True,
@@ -95,50 +94,34 @@ def render_prediction_panel(result: dict) -> None:
 
     # ── Probability Breakdown ─────────────────────────────────────────────────
     st.markdown("### 📊 Probability Analysis")
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        st.metric(
-            label="🟢 Real (Bonafide) Probability",
-            value=f"{real_prob * 100:.2f}%",
-            delta=None,
-        )
-        st.progress(float(real_prob), text=f"{real_prob * 100:.1f}% Real")
-
-    with col2:
-        st.metric(
-            label="🔴 Fake (Spoof) Probability",
-            value=f"{fake_prob * 100:.2f}%",
-            delta=None,
-        )
-        st.progress(float(fake_prob), text=f"{fake_prob * 100:.1f}% Fake")
-
-    with col3:
-        st.metric(label="⚡ Inference Time", value=f"{infer_ms:.1f} ms")
-        st.metric(label="🎯 Decision Threshold", value=f"{threshold:.3f}")
-
-    # ── Confidence Gauge (CSS progress bar) ─────────────────────────────────
-    st.markdown("### 🔵 Confidence Gauge")
-    gauge_color = verdict_color
+    
+    real_pct = real_prob * 100
+    fake_pct = fake_prob * 100
+    
     st.markdown(
         f"""
-        <div style="background: #1E2028; border-radius: 8px; padding: 4px; margin-bottom: 8px;">
-            <div style="
-                width: {confidence * 100:.1f}%;
-                background: linear-gradient(90deg, {gauge_color}88, {gauge_color});
-                height: 22px;
-                border-radius: 6px;
-                transition: width 0.6s ease;
-                display: flex;
-                align-items: center;
-                justify-content: flex-end;
-                padding-right: 8px;
-            ">
-                <span style="color: white; font-size: 0.8rem; font-weight: bold;">
-                    {confidence * 100:.1f}%
-                </span>
+        <div style="display: flex; justify-content: space-between; gap: 12px; margin-top: 15px; margin-bottom: 20px;">
+            <div style="background: #141721; padding: 12px 16px; border-radius: 10px; flex: 1; border: 1px solid #1E2330;">
+                <div style="font-size: 0.65rem; color: #888899 !important; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Real Speech</div>
+                <div style="font-size: 1.25rem; font-weight: 700; color: #2A9D8F !important; margin-top: 4px;">{real_pct:.2f}%</div>
+                <div style="background: #222530; border-radius: 4px; height: 6px; margin-top: 8px; overflow: hidden;">
+                    <div style="background: #2A9D8F; width: {real_pct}%; height: 100%;"></div>
+                </div>
+            </div>
+            <div style="background: #141721; padding: 12px 16px; border-radius: 10px; flex: 1; border: 1px solid #1E2330;">
+                <div style="font-size: 0.65rem; color: #888899 !important; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">AI Generated / Spoof</div>
+                <div style="font-size: 1.25rem; font-weight: 700; color: #E63946 !important; margin-top: 4px;">{fake_pct:.2f}%</div>
+                <div style="background: #222530; border-radius: 4px; height: 6px; margin-top: 8px; overflow: hidden;">
+                    <div style="background: #E63946; width: {fake_pct}%; height: 100%;"></div>
+                </div>
+            </div>
+            <div style="background: #141721; padding: 12px 16px; border-radius: 10px; flex: 1; border: 1px solid #1E2330;">
+                <div style="font-size: 0.65rem; color: #888899 !important; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Latency</div>
+                <div style="font-size: 1.25rem; font-weight: 700; color: #00F2FE !important; margin-top: 4px;">{infer_ms:.1f} ms</div>
+                <div style="font-size: 0.65rem; color: #666677 !important; margin-top: 8px; font-weight: 500;">Threshold: {threshold:.3f}</div>
             </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
+
