@@ -31,9 +31,29 @@ os.environ.setdefault("KERAS_BACKEND", "tensorflow")
 import numpy as np
 import streamlit as st
 
+# ── Eagerly Initialize TensorFlow context on main thread ──────────────────────
+import tensorflow as tf
+try:
+    # Disable GPU devices for this process/thread
+    tf.config.set_visible_devices([], 'GPU')
+    # Run a simple tensor op to initialize TF runtime/threadpool on main thread
+    _ = tf.constant([1.0]) + tf.constant([2.0])
+except Exception:
+    pass
+
 # ── Path Setup ────────────────────────────────────────────────────────────────
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
+
+# ── Eager Model Warm-up (Runs on main thread to prevent worker thread segfaults) ─
+try:
+    from src.trainer import load_model
+    # Pre-load/warm up Keras with the default model
+    _ = load_model("custom_cnn")
+except Exception:
+    pass
+
+
 
 
 # ── Streamlit Page Config ─────────────────────────────────────────────────────
