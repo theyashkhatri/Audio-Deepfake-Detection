@@ -47,87 +47,94 @@ st.set_page_config(
 st.markdown("""
 <style>
     /* Global dark background */
-    .stApp { background-color: #0E1117; }
-    .main .block-container { padding: 1.5rem 2rem; max-width: 1400px; }
+    .stApp { background-color: #0A0C10; }
+    .main .block-container { padding: 2rem 3rem; max-width: 1400px; }
 
-    /* Sidebar */
+    /* Sidebar minimal styling */
     [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #12151C 0%, #0E1117 100%);
-        border-right: 1px solid #2A2A35;
+        background: #0E1116;
+        border-right: 1px solid #1E2330;
     }
 
-    /* Header brand */
-    .brand-header {
-        background: linear-gradient(135deg, #1A1F2E, #0E1117);
-        border: 1px solid #2E3250;
-        border-radius: 14px;
-        padding: 20px 28px;
+    /* Premium card elements */
+    .premium-card {
+        background: #0E1116;
+        border: 1px solid #1E2330;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
         margin-bottom: 24px;
-        text-align: center;
+    }
+
+    /* Header brand - minimal */
+    .brand-header {
+        border-bottom: 1px solid #1E2330;
+        padding-bottom: 16px;
+        margin-bottom: 32px;
+        text-align: left;
     }
     .brand-title {
-        font-size: 2.4rem;
+        font-size: 2.2rem;
         font-weight: 800;
-        background: linear-gradient(90deg, #4ECDC4, #457BDB, #E63946);
+        letter-spacing: -0.5px;
+        background: linear-gradient(90deg, #00F2FE, #4FACFE);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
         margin: 0;
     }
     .brand-subtitle {
-        color: #888;
-        font-size: 1rem;
-        margin-top: 6px;
+        color: #777;
+        font-size: 0.95rem;
+        margin-top: 4px;
     }
 
-    /* Upload zone */
+    /* Upload zone - clean minimal */
     [data-testid="stFileUploader"] {
-        border: 2px dashed #2E3250 !important;
+        border: 1px dashed #1E2330 !important;
         border-radius: 12px !important;
-        background: #12151C !important;
+        background: #0E1116 !important;
+        padding: 10px !important;
     }
 
     /* Metric cards */
     [data-testid="stMetric"] {
-        background: #12151C;
-        border: 1px solid #2A2A35;
+        background: #0E1116;
+        border: 1px solid #1E2330;
         border-radius: 10px;
         padding: 12px;
     }
 
     /* Section divider */
     .section-header {
-        font-size: 1.15rem;
+        font-size: 1.1rem;
         font-weight: 700;
-        color: #4ECDC4;
-        border-bottom: 1px solid #2A2A35;
+        color: #00F2FE;
+        border-bottom: 1px solid #1E2330;
         padding-bottom: 6px;
-        margin-bottom: 16px;
+        margin-bottom: 20px;
     }
 
     /* Spinner override */
-    .stSpinner > div { border-top-color: #4ECDC4 !important; }
+    .stSpinner > div { border-top-color: #00F2FE !important; }
 
     /* Progress bars */
-    .stProgress > div > div { background: linear-gradient(90deg, #4ECDC4, #457BDB) !important; }
+    .stProgress > div > div { background: linear-gradient(90deg, #4FACFE, #00F2FE) !important; }
 
     /* Expander */
     .streamlit-expanderHeader {
-        background: #12151C !important;
-        border: 1px solid #2A2A35 !important;
+        background: #0E1116 !important;
+        border: 1px solid #1E2330 !important;
         border-radius: 8px !important;
     }
 
-    /* Tabs */
-    .stTabs [data-baseweb="tab"] { background: #12151C; }
-    .stTabs [aria-selected="true"] { border-bottom-color: #4ECDC4 !important; }
-
     /* Download button */
     [data-testid="stDownloadButton"] button {
-        background: linear-gradient(90deg, #2A9D8F, #457BDB) !important;
+        background: linear-gradient(90deg, #4FACFE, #00F2FE) !important;
         color: white !important;
         border-radius: 8px !important;
         border: none !important;
+        font-weight: 600 !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -406,17 +413,18 @@ with st.spinner("🔍 Analysing audio …"):
 # VISUALISATION TABS
 # ─────────────────────────────────────────────────────────────────────────────
 
-tab_audio, tab_spec, tab_result, tab_windows, tab_gradcam, tab_report = st.tabs([
-    "🎵 Audio",
-    "🎨 Spectrogram",
-    "🎯 Result",
-    "📊 Window Analysis",
-    "🔥 Grad-CAM",
-    "📥 Report",
-])
+# Main two-column dashboard split
+col_left, col_right = st.columns([1, 1], gap="medium")
 
-# ── Tab 1: Audio Player ───────────────────────────────────────────────────────
-with tab_audio:
+with col_left:
+    # 1. Prediction verdict card
+    st.markdown('<div class="premium-card">', unsafe_allow_html=True)
+    from app.components.prediction_panel import render_prediction_panel
+    render_prediction_panel(result)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # 2. Waveform & audio player card
+    st.markdown('<div class="premium-card">', unsafe_allow_html=True)
     from app.components.audio_player import render_audio_player
     uploaded_file.seek(0)
     render_audio_player(
@@ -425,77 +433,67 @@ with tab_audio:
         sample_rate=SAMPLE_RATE,
         filename=uploaded_file.name,
     )
+    st.markdown('</div>', unsafe_allow_html=True)
 
-# ── Tab 2: Spectrogram ────────────────────────────────────────────────────────
-with tab_spec:
+with col_right:
+    # 3. Log-Mel spectrogram card
+    st.markdown('<div class="premium-card">', unsafe_allow_html=True)
     from app.components.spectrogram_view import render_spectrogram
     spec = single_result.get("spec")
     if spec is not None:
         render_spectrogram(
             spec,
             sample_rate=SAMPLE_RATE,
-            title=f"Log-Mel Spectrogram — {uploaded_file.name}",
+            title=f"Spectrogram — {uploaded_file.name}",
         )
+    st.markdown('</div>', unsafe_allow_html=True)
 
-# ── Tab 3: Prediction Result ──────────────────────────────────────────────────
-with tab_result:
-    from app.components.prediction_panel import render_prediction_panel
-    render_prediction_panel(result)
-
-# ── Tab 4: Window Analysis ────────────────────────────────────────────────────
-with tab_windows:
-    from app.components.window_analysis import render_window_analysis
-    if use_windowed and "windows" in result:
-        render_window_analysis(result["windows"], threshold=threshold)
-    else:
-        st.info(
-            "Window analysis is disabled or not applicable for this file. "
-            "Enable 'Window-based analysis' in the sidebar and upload again."
-        )
-
-# ── Tab 5: Grad-CAM ───────────────────────────────────────────────────────────
-with tab_gradcam:
-    from app.components.gradcam_view import render_gradcam
+    # 4. Grad-CAM card (if enabled)
     if show_gradcam:
+        st.markdown('<div class="premium-card">', unsafe_allow_html=True)
+        from app.components.gradcam_view import render_gradcam
         gradcam_result = single_result.get("gradcam")
-        spec           = single_result.get("spec")
         if spec is not None:
             render_gradcam(gradcam_result, spec)
         else:
             st.warning("Spectrogram not available for Grad-CAM.")
-    else:
-        st.info("Enable 'Show Grad-CAM explanation' in the sidebar.")
+        st.markdown('</div>', unsafe_allow_html=True)
 
-# ── Tab 6: Downloadable JSON Report ──────────────────────────────────────────
-with tab_report:
-    st.markdown("### 📥 Download Analysis Report")
-    st.markdown("Download the complete analysis as a structured JSON report.")
+# 5. Full width Window analysis (if enabled)
+if use_windowed and "windows" in result:
+    st.markdown('<div class="premium-card">', unsafe_allow_html=True)
+    from app.components.window_analysis import render_window_analysis
+    render_window_analysis(result["windows"], threshold=threshold)
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    # Build clean report (no large arrays)
-    report = {
-        "filename":       uploaded_file.name,
-        "model_used":     selected_model_name,
-        "threshold":      threshold,
-        "analysis_mode":  "windowed" if use_windowed else "single",
-        "verdict": {
-            "label":      result.get("label") or result.get("overall_label"),
-            "is_fake":    result.get("is_fake") if "is_fake" in result else result.get("overall_is_fake"),
-            "real_prob":  result.get("real_prob") or result.get("aggregate_real_prob"),
-            "fake_prob":  result.get("fake_prob") or result.get("aggregate_fake_prob"),
-            "confidence": result.get("confidence") or result.get("overall_confidence"),
-        },
-        "risk": result.get("risk", {}),
-        "inference_ms": result.get("inference_ms", total_ms),
+# 6. Full width JSON report card
+st.markdown('<div class="premium-card">', unsafe_allow_html=True)
+st.markdown("### 📥 Download Analysis Report")
+report = {
+    "filename":       uploaded_file.name,
+    "model_used":     selected_model_name,
+    "threshold":      threshold,
+    "analysis_mode":  "windowed" if use_windowed else "single",
+    "verdict": {
+        "label":      result.get("label") or result.get("overall_label"),
+        "is_fake":    result.get("is_fake") if "is_fake" in result else result.get("overall_is_fake"),
+        "real_prob":  result.get("real_prob") or result.get("aggregate_real_prob"),
+        "fake_prob":  result.get("fake_prob") or result.get("aggregate_fake_prob"),
+        "confidence": result.get("confidence") or result.get("overall_confidence"),
+    },
+    "risk": result.get("risk", {}),
+    "inference_ms": result.get("inference_ms", total_ms),
+}
+if use_windowed and "windows" in result:
+    report["window_analysis"] = {
+        "n_windows":     result.get("n_windows"),
+        "duration_sec":  result.get("duration_sec"),
+        "windows":       result.get("windows", []),
     }
-    if use_windowed and "windows" in result:
-        report["window_analysis"] = {
-            "n_windows":     result.get("n_windows"),
-            "duration_sec":  result.get("duration_sec"),
-            "windows":       result.get("windows", []),
-        }
+report_json = json.dumps(report, indent=2, ensure_ascii=False)
 
-    report_json = json.dumps(report, indent=2, ensure_ascii=False)
-
+col_rep_btn, col_rep_space = st.columns([1, 2])
+with col_rep_btn:
     st.download_button(
         label="⬇️ Download JSON Report",
         data=report_json,
@@ -503,15 +501,11 @@ with tab_report:
         mime="application/json",
     )
 
-    st.markdown("**Preview:**")
-    with st.expander("📄 Report JSON", expanded=True):
-        st.json(report)
+with st.expander("📄 View Report JSON", expanded=False):
+    st.json(report)
+st.markdown('</div>', unsafe_allow_html=True)
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# FOOTER
-# ─────────────────────────────────────────────────────────────────────────────
-
+# ── Footer ────────────────────────────────────────────────────────────────────
 st.divider()
 st.markdown(
     f"""
@@ -520,10 +514,6 @@ st.markdown(
         &nbsp;|&nbsp; Model: <strong>{selected_model_name}</strong>
         &nbsp;|&nbsp; Total inference: <strong>{total_ms:.0f} ms</strong>
         &nbsp;|&nbsp; Trained on ASVspoof 2019 LA dataset
-        &nbsp;|&nbsp;
-        <a href="https://github.com/yourusername/deepshield-audio" style="color: #4ECDC4;">
-            GitHub ↗
-        </a>
     </div>
     """,
     unsafe_allow_html=True,

@@ -45,11 +45,31 @@ def render_window_analysis(
     n_real = sum(1 for l in labels if l == "bonafide")
 
     # ── Summary Metrics ───────────────────────────────────────────────────────
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Total Windows",     len(window_results))
-    col2.metric("🔴 Fake Windows",   n_fake)
-    col3.metric("🟢 Real Windows",   n_real)
-    col4.metric("Avg P(Fake)",        f"{np.mean(fake_probs):.3f}")
+    avg_fake = np.mean(fake_probs)
+    st.markdown(
+        f"""
+        <div style="display: flex; justify-content: space-between; gap: 8px; margin-top: 10px; margin-bottom: 20px;">
+            <div style="background: #141721; padding: 10px; border-radius: 8px; flex: 1; text-align: center; border: 1px solid #1E2330;">
+                <div style="font-size: 0.65rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">Total Windows</div>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #00F2FE; margin-top: 4px;">{len(window_results)}</div>
+            </div>
+            <div style="background: #141721; padding: 10px; border-radius: 8px; flex: 1; text-align: center; border: 1px solid #1E2330;">
+                <div style="font-size: 0.65rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">🔴 Fake Windows</div>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #E63946; margin-top: 4px;">{n_fake}</div>
+            </div>
+            <div style="background: #141721; padding: 10px; border-radius: 8px; flex: 1; text-align: center; border: 1px solid #1E2330;">
+                <div style="font-size: 0.65rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">🟢 Real Windows</div>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #2A9D8F; margin-top: 4px;">{n_real}</div>
+            </div>
+            <div style="background: #141721; padding: 10px; border-radius: 8px; flex: 1; text-align: center; border: 1px solid #1E2330;">
+                <div style="font-size: 0.65rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">Avg P(Fake)</div>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #00F2FE; margin-top: 4px;">{avg_fake:.3f}</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
 
     # ── Interactive Plotly Chart ──────────────────────────────────────────────
     if use_plotly:
