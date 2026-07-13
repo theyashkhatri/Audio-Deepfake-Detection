@@ -21,37 +21,11 @@ import tempfile
 import time
 from pathlib import Path
 
-# ── Force TensorFlow CPU-only (prevents Metal GPU segfault on Apple Silicon) ──
-os.environ.setdefault("CUDA_VISIBLE_DEVICES", "-1")          # disable CUDA GPU
-os.environ.setdefault("TF_METAL_DEVICE_ENABLE", "0")         # disable Metal GPU
-os.environ.setdefault("METAL_DEVICE_WRAPPER_TYPE", "0")       # disable Metal wrapper
-os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "3")           # suppress TF logs
-os.environ.setdefault("KERAS_BACKEND", "tensorflow")
-
-import numpy as np
-import streamlit as st
-
-# ── Eagerly Initialize TensorFlow context on main thread ──────────────────────
-import tensorflow as tf
-try:
-    # Disable GPU devices for this process/thread
-    tf.config.set_visible_devices([], 'GPU')
-    # Run a simple tensor op to initialize TF runtime/threadpool on main thread
-    _ = tf.constant([1.0]) + tf.constant([2.0])
-except Exception:
-    pass
-
 # ── Path Setup ────────────────────────────────────────────────────────────────
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-
-# ── Eager Model Warm-up (Runs on main thread to prevent worker thread segfaults) ─
-try:
-    from src.trainer import load_model
-    # Pre-load/warm up Keras with the default model
-    _ = load_model("custom_cnn")
-except Exception:
-    pass
+import numpy as np
+import streamlit as st
 
 
 
@@ -163,17 +137,13 @@ st.markdown("""
 # CACHED MODEL LOADER
 # ─────────────────────────────────────────────────────────────────────────────
 
-@st.cache_resource(show_spinner="Loading AI model …")
-def load_model_cached(model_name: str):
-    """Load and cache a trained model (cached across Streamlit reruns)."""
-    try:
-        from src.trainer import load_model
-        model = load_model(model_name)
-        return model, None
-    except FileNotFoundError as e:
-        return None, str(e)
-    except Exception as e:
-        return None, f"Error loading model: {e}"
+def check_model_exists(model_name: str):
+    from src.config import SAVED_MODELS_DIR
+    model_path = SAVED_MODELS_DIR / model_name / f"{model_name}_best.keras"
+    if not model_path.exists():
+        return False, f"Model file not found: {model_path}"
+    return True, None
+
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -283,29 +253,16 @@ st.markdown("""
 # LOAD MODEL
 # ─────────────────────────────────────────────────────────────────────────────
 
-model_obj, model_error = load_model_cached(selected_model_name)
+is_trained, model_error = check_model_exists(selected_model_name)
 
-if model_error:
+if not is_trained:
     st.warning(
         f"⚠️ **Model not found:** {model_error}\n\n"
         "Running in **demo mode** with random weights. "
         "Train the models first using `notebooks/03_Model_Training.ipynb`.",
     )
-    # Load a fresh untrained model for demo
-    try:
-        if selected_model_name == "custom_cnn":
-            from src.models.custom_cnn import build_custom_cnn
-            model_obj = build_custom_cnn()
-        elif selected_model_name == "cnn_lstm":
-            from src.models.cnn_lstm import build_cnn_lstm
-            model_obj = build_cnn_lstm()
-        else:
-            from src.models.efficientnet import build_efficientnet_b0
-            model_obj = build_efficientnet_b0(freeze_backbone=True)
-        st.info("🎭 **Demo mode active** — using untrained model (random predictions).")
-    except Exception as e:
-        st.error(f"❌ Failed to load any model: {e}")
-        st.stop()
+    st.info("🎭 **Demo mode active** — using untrained model (random predictions).")
+
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -373,39 +330,76 @@ with st.spinner("🔍 Analysing audio …"):
 
     try:
         import librosa
-        from src.config import SAMPLE_RATE, WINDOW_SECONDS, HOP_SECONDS
-        from src.inference import AudioInferenceEngine
-        from src.preprocessor import load_audio
+        import subprocess
+        import json
+        from src.config import SAMPLE_RATE
+        from src.preprocessor import preprocess_file
 
         # Load waveform
         waveform, sr = librosa.load(tmp_path, sr=SAMPLE_RATE, mono=True)
 
-        # Build inference engine with selected threshold
-        engine = AudioInferenceEngine(
-            model_obj,
-            model_name=selected_model_name,
-            threshold=threshold,
-        )
+        # Precompute the spectrogram locally in the Streamlit process (safe and fast)
+        spec = preprocess_file(tmp_path, add_channel_dim=True)
 
         t0 = time.perf_counter()
 
-        # Run inference
+        # Build CLI command to isolate TensorFlow execution in its own process
+        cmd = [
+            ".venv/bin/python",
+            "-m",
+            "src.inference",
+            tmp_path,
+            "--model",
+            selected_model_name,
+            "--threshold",
+            str(threshold),
+            "--json"
+        ]
         if use_windowed:
-            result = engine.predict_long_audio(
-                tmp_path,
-                window_sec=window_sec,
-                hop_sec=hop_sec,
-            )
-            # Also get single-file result for Grad-CAM
-            single_result = engine.predict(tmp_path, return_gradcam=show_gradcam)
-        else:
-            result = engine.predict(tmp_path, return_gradcam=show_gradcam)
-            single_result = result
+            cmd.append("--windowed")
+            cmd.extend(["--window-sec", str(window_sec)])
+        if show_gradcam:
+            cmd.append("--gradcam")
+
+        # Run process with PYTHONPATH set so src packages import correctly
+        res = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            env={**os.environ, "PYTHONPATH": "."}
+        )
+
+        if res.returncode != 0:
+            st.error(f"❌ Inference process crashed: {res.stderr or res.stdout}")
+            st.stop()
+
+        try:
+            result = json.loads(res.stdout)
+        except Exception as e:
+            st.error(f"❌ Failed to parse inference output: {e}\nRaw output: {res.stdout}")
+            st.stop()
+
+        single_result = result
+
+        # Reconstruct NumPy arrays for Grad-CAM overlay if present in JSON response
+        if "gradcam" in single_result and single_result["gradcam"] is not None:
+            g = single_result["gradcam"]
+            if "heatmap" in g:
+                g["heatmap"] = np.array(g["heatmap"], dtype=np.float32)
+            if "overlay" in g:
+                g["overlay"] = np.array(g["overlay"], dtype=np.float32)
+
+        # Inject computed spec back
+        single_result["spec"] = spec
+        result["spec"] = spec
 
         total_ms = (time.perf_counter() - t0) * 1000
 
     finally:
-        os.unlink(tmp_path)
+        try:
+            os.unlink(tmp_path)
+        except Exception:
+            pass
 
 
 # ─────────────────────────────────────────────────────────────────────────────
