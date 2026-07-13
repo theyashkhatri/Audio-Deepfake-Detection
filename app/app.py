@@ -349,75 +349,59 @@ if uploaded_file is None:
 # ─────────────────────────────────────────────────────────────────────────────
 
 with st.spinner("🔍 Analysing audio …"):
-    # Save to temp file for librosa to read
     suffix = Path(uploaded_file.name).suffix.lower()
     with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
         tmp.write(uploaded_file.read())
         tmp_path = tmp.name
 
     try:
-        import subprocess
-        import json
         from src.config import SAMPLE_RATE
+        from src.trainer import load_model
+        from src.inference import AudioInferenceEngine
+        from src.preprocessor import load_audio, preprocess_waveform
 
         t0 = time.perf_counter()
 
-        # Build CLI command to isolate TensorFlow execution in its own process
-        cmd = [
-            ".venv/bin/python",
-            "-m",
-            "src.inference",
-            tmp_path,
-            "--model",
-            selected_model_name,
-            "--threshold",
-            str(threshold),
-            "--json"
-        ]
+        # ── Load model (cached per model name so it loads only once) ──────────
+        @st.cache_resource(show_spinner=False)
+        def _get_engine(model_name: str, _threshold: float):
+            try:
+                model = load_model(model_name)
+            except FileNotFoundError:
+                import warnings
+                warnings.warn(f"No weights for '{model_name}', using untrained model (demo mode).")
+                if model_name == "custom_cnn":
+                    from src.models.custom_cnn import build_custom_cnn
+                    model = build_custom_cnn()
+                elif model_name == "cnn_lstm":
+                    from src.models.cnn_lstm import build_cnn_lstm
+                    model = build_cnn_lstm()
+                else:
+                    from src.models.efficientnet import build_efficientnet
+                    model = build_efficientnet()
+            return AudioInferenceEngine(model, model_name=model_name, threshold=_threshold)
+
+        engine = _get_engine(selected_model_name, threshold)
+
+        # ── Run inference directly (no subprocess) ────────────────────────────
         if use_windowed:
-            cmd.append("--windowed")
-            cmd.extend(["--window-sec", str(window_sec)])
-            cmd.extend(["--hop-sec", str(hop_sec)])
-        if show_gradcam:
-            cmd.append("--gradcam")
+            result = engine.predict_long_audio(
+                tmp_path,
+                window_sec=window_sec,
+                hop_sec=hop_sec,
+            )
+        else:
+            result = engine.predict(tmp_path, return_gradcam=show_gradcam)
 
-        # Run process with PYTHONPATH set so src packages import correctly
-        res = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            env={**os.environ, "PYTHONPATH": "."}
-        )
-
-        if res.returncode != 0:
-            st.error(f"❌ Inference process crashed: {res.stderr or res.stdout}")
-            st.stop()
-
-        try:
-            result = json.loads(res.stdout)
-        except Exception as e:
-            st.error(f"❌ Failed to parse inference output: {e}\nRaw output: {res.stdout}")
-            st.stop()
-
-        # Reconstruct NumPy arrays safely from JSON fields
-        waveform = np.array(result.get("waveform", []), dtype=np.float32)
-        spec = np.array(result.get("spec", []), dtype=np.float32)
+        # ── Load waveform + spec for visualisation ────────────────────────────
+        waveform = load_audio(str(tmp_path), sr=SAMPLE_RATE)
+        spec     = preprocess_waveform(waveform, sr=SAMPLE_RATE, add_channel_dim=True)
 
         single_result = result
-
-        # Reconstruct NumPy arrays for Grad-CAM overlay if present in JSON response
-        if "gradcam" in single_result and single_result["gradcam"] is not None:
-            g = single_result["gradcam"]
-            if "heatmap" in g:
-                g["heatmap"] = np.array(g["heatmap"], dtype=np.float32)
-            if "overlay" in g:
-                g["overlay"] = np.array(g["overlay"], dtype=np.float32)
-
-        # Inject computed spec and waveform back
-        single_result["spec"] = spec
-        result["spec"] = spec
+        single_result["spec"]     = spec
         single_result["waveform"] = waveform
-        result["waveform"] = waveform
+        result["spec"]            = spec
+        result["waveform"]        = waveform
 
         total_ms = (time.perf_counter() - t0) * 1000
 

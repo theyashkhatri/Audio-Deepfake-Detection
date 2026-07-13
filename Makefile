@@ -40,7 +40,14 @@ test-coverage:  ## Run tests with coverage report
 # ── Application ───────────────────────────────────────────────────────────────
 
 app:  ## Launch the Streamlit application
-	TF_CPP_MIN_LOG_LEVEL=3 KERAS_BACKEND=tensorflow TF_METAL_DEVICE_ENABLE=0 CUDA_VISIBLE_DEVICES=-1 $(STREAMLIT) run app/app.py
+	OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES \
+	TF_CPP_MIN_LOG_LEVEL=3 \
+	KERAS_BACKEND=tensorflow \
+	TF_METAL_DEVICE_ENABLE=0 \
+	CUDA_VISIBLE_DEVICES=-1 \
+	$(STREAMLIT) run app/app.py \
+		--server.fileWatcherType none \
+		--server.headless true
 
 # ── Training ──────────────────────────────────────────────────────────────────
 
