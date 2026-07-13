@@ -454,11 +454,19 @@ def main():
                                   threshold=args.threshold)
 
     if args.json:
+        # Load waveform and spec safely on the subprocess main thread
+        waveform = load_audio(str(args.audio), sr=engine.sr)
+        spec = preprocess_waveform(waveform, sr=engine.sr, add_channel_dim=True)
+
         if args.windowed:
             result = engine.predict_long_audio(args.audio, window_sec=args.window_sec)
         else:
             result = engine.predict(args.audio, return_gradcam=args.gradcam)
         
+        # Add waveform and spec to result
+        result["waveform"] = waveform
+        result["spec"] = spec
+
         # Convert numpy arrays to lists for JSON serialization
         def to_serializable(obj):
             if isinstance(obj, np.ndarray):
@@ -469,7 +477,7 @@ def main():
                 return [to_serializable(x) for x in obj]
             return obj
 
-        printable = to_serializable({k: v for k, v in result.items() if k != "spec"})
+        printable = to_serializable(result)
         print(json.dumps(printable))
         return
 

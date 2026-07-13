@@ -358,17 +358,9 @@ with st.spinner("🔍 Analysing audio …"):
         tmp_path = tmp.name
 
     try:
-        import librosa
         import subprocess
         import json
         from src.config import SAMPLE_RATE
-        from src.preprocessor import preprocess_file
-
-        # Load waveform
-        waveform, sr = librosa.load(tmp_path, sr=SAMPLE_RATE, mono=True)
-
-        # Precompute the spectrogram locally in the Streamlit process (safe and fast)
-        spec = preprocess_file(tmp_path, add_channel_dim=True)
 
         t0 = time.perf_counter()
 
@@ -408,6 +400,10 @@ with st.spinner("🔍 Analysing audio …"):
             st.error(f"❌ Failed to parse inference output: {e}\nRaw output: {res.stdout}")
             st.stop()
 
+        # Reconstruct NumPy arrays safely from JSON fields
+        waveform = np.array(result.get("waveform", []), dtype=np.float32)
+        spec = np.array(result.get("spec", []), dtype=np.float32)
+
         single_result = result
 
         # Reconstruct NumPy arrays for Grad-CAM overlay if present in JSON response
@@ -418,9 +414,11 @@ with st.spinner("🔍 Analysing audio …"):
             if "overlay" in g:
                 g["overlay"] = np.array(g["overlay"], dtype=np.float32)
 
-        # Inject computed spec back
+        # Inject computed spec and waveform back
         single_result["spec"] = spec
         result["spec"] = spec
+        single_result["waveform"] = waveform
+        result["waveform"] = waveform
 
         total_ms = (time.perf_counter() - t0) * 1000
 
