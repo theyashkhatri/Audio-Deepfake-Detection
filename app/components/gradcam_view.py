@@ -4,6 +4,7 @@ DeepShield Audio — Grad-CAM View Component
 Renders the Grad-CAM heatmap overlay on the Log-Mel spectrogram.
 """
 
+import io
 import numpy as np
 import streamlit as st
 import matplotlib
@@ -11,6 +12,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
 from matplotlib.cm import ScalarMappable
+
 
 
 def render_gradcam(
@@ -110,12 +112,17 @@ def render_gradcam(
         plt.setp(cbar.ax.yaxis.get_ticklabels(), color="#BBBBBB", fontsize=7)
 
     plt.suptitle(
-        "🔥 Model Explainability (Grad-CAM)",
+        "Model Explainability (Grad-CAM)",
         color="white", fontsize=12, fontweight="bold", y=1.01,
     )
     plt.tight_layout()
-    st.pyplot(fig, use_container_width=True)
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", dpi=120, bbox_inches="tight",
+                facecolor=fig.get_facecolor())
+    buf.seek(0)
+    st.image(buf, width="stretch")
     plt.close(fig)
+
 
     # ── Interpretation Guide ─────────────────────────────────────────────────
     with st.expander("ℹ️ How to interpret Grad-CAM"):

@@ -2,8 +2,11 @@
 DeepShield Audio — Spectrogram View Component
 ===============================================
 Renders Log-Mel spectrogram with frequency axis and colour bar.
+Uses st.image() instead of st.pyplot() to avoid matplotlib/Streamlit
+segfault on Apple Silicon (M1/M2/M3).
 """
 
+import io
 import numpy as np
 import streamlit as st
 import matplotlib
@@ -62,5 +65,11 @@ def render_spectrogram(
         spine.set_edgecolor("#333333")
 
     plt.tight_layout()
-    st.pyplot(fig, use_container_width=True)
+
+    # Render to buffer → st.image() avoids Streamlit/matplotlib segfault on Apple Silicon
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", dpi=120, bbox_inches="tight",
+                facecolor=fig.get_facecolor())
+    buf.seek(0)
+    st.image(buf, width="stretch")
     plt.close(fig)

@@ -2,6 +2,8 @@
 DeepShield Audio — Audio Player Component
 ==========================================
 Renders waveform visualisation in the Streamlit sidebar/main panel.
+Uses st.image() instead of st.pyplot() to avoid matplotlib/Streamlit
+segfault on Apple Silicon (M1/M2/M3).
 """
 
 import io
@@ -10,7 +12,6 @@ import streamlit as st
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-import librosa
 
 
 def render_audio_player(
@@ -53,7 +54,13 @@ def render_audio_player(
     ax.set_title(f"Waveform — {filename}", color="white", fontsize=10, fontweight="bold")
 
     plt.tight_layout()
-    st.pyplot(fig, use_container_width=True)  # noqa: deprecated arg OK for older streamlit
+
+    # Render to buffer → st.image() avoids Streamlit/matplotlib segfault on Apple Silicon
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", dpi=120, bbox_inches="tight",
+                facecolor=fig.get_facecolor())
+    buf.seek(0)
+    st.image(buf, width="stretch")
     plt.close(fig)
 
     # ── Stats Row ────────────────────────────────────────────────────────────

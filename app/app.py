@@ -21,12 +21,20 @@ import tempfile
 import time
 from pathlib import Path
 
+# ── Force TensorFlow CPU-only (prevents Metal GPU segfault on Apple Silicon) ──
+os.environ.setdefault("CUDA_VISIBLE_DEVICES", "-1")          # disable CUDA GPU
+os.environ.setdefault("TF_METAL_DEVICE_ENABLE", "0")         # disable Metal GPU
+os.environ.setdefault("METAL_DEVICE_WRAPPER_TYPE", "0")       # disable Metal wrapper
+os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "3")           # suppress TF logs
+os.environ.setdefault("KERAS_BACKEND", "tensorflow")
+
 import numpy as np
 import streamlit as st
 
 # ── Path Setup ────────────────────────────────────────────────────────────────
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
+
 
 # ── Streamlit Page Config ─────────────────────────────────────────────────────
 st.set_page_config(

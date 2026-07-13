@@ -6,6 +6,7 @@ Renders the per-window fake probability timeline for long audio.
 
 from typing import List, Dict
 
+import io
 import numpy as np
 import streamlit as st
 import matplotlib
@@ -70,7 +71,7 @@ def render_window_analysis(
                 "Verdict":   "🔴 FAKE" if w["is_fake"] else "🟢 REAL",
             })
         df = pd.DataFrame(rows)
-        st.dataframe(df, use_container_width=True)
+        st.dataframe(df, width="stretch")
 
 
 def _render_plotly_timeline(
@@ -129,7 +130,7 @@ def _render_plotly_timeline(
     fig.update_xaxes(gridcolor="#2A2A2A", linecolor="#444")
     fig.update_yaxes(gridcolor="#2A2A2A", linecolor="#444")
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
 
 def _render_matplotlib_timeline(window_results: list, threshold: float) -> None:
@@ -159,5 +160,10 @@ def _render_matplotlib_timeline(window_results: list, threshold: float) -> None:
         spine.set_edgecolor("#333333")
 
     plt.tight_layout()
-    st.pyplot(fig, use_container_width=True)
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", dpi=120, bbox_inches="tight",
+                facecolor=fig.get_facecolor())
+    buf.seek(0)
+    st.image(buf, width="stretch")
     plt.close(fig)
+

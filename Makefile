@@ -6,7 +6,7 @@
 PYTHON   := .venv/bin/python
 PIP      := .venv/bin/pip
 PYTEST   := .venv/bin/pytest
-STREAMLIT:= .venv/bin/streamlit
+STREAMLIT:= $(PYTHON) -m streamlit
 
 .PHONY: help install setup test test-fast lint app train-quick clean
 
@@ -40,7 +40,7 @@ test-coverage:  ## Run tests with coverage report
 # ── Application ───────────────────────────────────────────────────────────────
 
 app:  ## Launch the Streamlit application
-	$(STREAMLIT) run app/app.py
+	TF_CPP_MIN_LOG_LEVEL=3 KERAS_BACKEND=tensorflow TF_METAL_DEVICE_ENABLE=0 CUDA_VISIBLE_DEVICES=-1 $(STREAMLIT) run app/app.py
 
 # ── Training ──────────────────────────────────────────────────────────────────
 
