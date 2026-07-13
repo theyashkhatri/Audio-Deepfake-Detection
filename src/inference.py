@@ -419,18 +419,26 @@ def main():
     parser.add_argument("--windowed",   action="store_true",
                         help="Use windowed inference for long audio")
     parser.add_argument("--window-sec", type=float, default=WINDOW_SECONDS)
+    parser.add_argument("--json",       action="store_true",
+                        help="Output raw JSON data only (clean parseable format)")
+    parser.add_argument("--gradcam",    action="store_true",
+                        help="Compute and output Grad-CAM heatmap in JSON (requires --json)")
     args = parser.parse_args()
 
     from src.utils import setup_logging
-    setup_logging("INFO")
+    # If JSON output is requested, do not pollute stderr with INFO logs either
+    log_level = "ERROR" if args.json else "INFO"
+    setup_logging(log_level)
 
     from src.trainer import load_model
     try:
         model = load_model(args.model)
     except FileNotFoundError:
-        print(f"⚠️  WARNING: Pre-trained weights for '{args.model}' not found.")
-        print("   Running in DEMO MODE with an untrained model (random predictions).")
-        print("   To get real predictions, run: make train-all\n")
+        import sys
+        if not args.json:
+            sys.stderr.write(f"⚠️  WARNING: Pre-trained weights for '{args.model}' not found.\n")
+            sys.stderr.write("   Running in DEMO MODE with an untrained model (random predictions).\n")
+            sys.stderr.write("   To get real predictions, run: make train-all\n\n")
         
         if args.model == "custom_cnn":
             from src.models.custom_cnn import build_custom_cnn
@@ -444,6 +452,27 @@ def main():
 
     engine = AudioInferenceEngine(model, model_name=args.model,
                                   threshold=args.threshold)
+
+    if args.json:
+        if args.windowed:
+            result = engine.predict_long_audio(args.audio, window_sec=args.window_sec)
+        else:
+            result = engine.predict(args.audio, return_gradcam=args.gradcam)
+        
+        # Convert numpy arrays to lists for JSON serialization
+        def to_serializable(obj):
+            if isinstance(obj, np.ndarray):
+                return obj.tolist()
+            elif isinstance(obj, dict):
+                return {k: to_serializable(v) for k, v in obj.items()}
+            elif isinstance(obj, (list, tuple)):
+                return [to_serializable(x) for x in obj]
+            return obj
+
+        printable = to_serializable({k: v for k, v in result.items() if k != "spec"})
+        print(json.dumps(printable))
+        return
+
 
     if args.windowed:
         result = engine.predict_long_audio(args.audio, window_sec=args.window_sec)
@@ -460,6 +489,7 @@ def main():
         printable = {k: v for k, v in result.items()
                      if k not in ("spec", "gradcam")}
         print(json.dumps(printable, indent=2))
+
 
 
 if __name__ == "__main__":
