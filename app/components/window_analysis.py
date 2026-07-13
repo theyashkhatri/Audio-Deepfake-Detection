@@ -78,7 +78,7 @@ def render_window_analysis(
                 "Verdict":   "🔴 FAKE" if w["is_fake"] else "🟢 REAL",
             })
         df = pd.DataFrame(rows)
-        st.dataframe(df, width=None)
+        st.dataframe(df, width="stretch")
 
 
 def _render_plotly_timeline(
@@ -136,5 +136,5 @@ def _render_plotly_timeline(
     )
     fig.update_xaxes(gridcolor="#2A2A2A", linecolor="#444")
     fig.update_yaxes(gridcolor="#2A2A2A", linecolor="#444")
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 

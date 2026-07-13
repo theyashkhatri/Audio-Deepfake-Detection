@@ -45,7 +45,7 @@ def render_gradcam(
             overlay_flipped = np.clip(overlay_flipped, 0, 255).astype(np.uint8)
 
         st.markdown(f"**Grad-CAM Superimposed Overlay [Layer: `{layer}`]**")
-        st.image(overlay_flipped, use_container_width=True)
+        st.image(overlay_flipped, width="stretch")
     else:
         st.warning("Grad-CAM visualization array is not available.")
 

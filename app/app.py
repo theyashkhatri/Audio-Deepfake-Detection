@@ -13,8 +13,6 @@ Run with:
     streamlit run app/app.py
 """
 
-import matplotlib
-matplotlib.use("Agg")
 
 import io
 import json
@@ -379,6 +377,7 @@ with st.spinner("🔍 Analysing audio …"):
         if use_windowed:
             cmd.append("--windowed")
             cmd.extend(["--window-sec", str(window_sec)])
+            cmd.extend(["--hop-sec", str(hop_sec)])
         if show_gradcam:
             cmd.append("--gradcam")
 

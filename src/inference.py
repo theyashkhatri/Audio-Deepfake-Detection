@@ -419,6 +419,8 @@ def main():
     parser.add_argument("--windowed",   action="store_true",
                         help="Use windowed inference for long audio")
     parser.add_argument("--window-sec", type=float, default=WINDOW_SECONDS)
+    parser.add_argument("--hop-sec",    type=float, default=HOP_SECONDS,
+                        help="Hop (step) between windows in seconds")
     parser.add_argument("--json",       action="store_true",
                         help="Output raw JSON data only (clean parseable format)")
     parser.add_argument("--gradcam",    action="store_true",
@@ -459,7 +461,8 @@ def main():
         spec = preprocess_waveform(waveform, sr=engine.sr, add_channel_dim=True)
 
         if args.windowed:
-            result = engine.predict_long_audio(args.audio, window_sec=args.window_sec)
+            result = engine.predict_long_audio(args.audio, window_sec=args.window_sec,
+                                               hop_sec=args.hop_sec)
         else:
             result = engine.predict(args.audio, return_gradcam=args.gradcam)
         
@@ -483,7 +486,8 @@ def main():
 
 
     if args.windowed:
-        result = engine.predict_long_audio(args.audio, window_sec=args.window_sec)
+        result = engine.predict_long_audio(args.audio, window_sec=args.window_sec,
+                                           hop_sec=args.hop_sec)
         # Don't print spec arrays
         printable = {k: v for k, v in result.items() if k != "windows"}
         print(json.dumps(printable, indent=2))
